@@ -56,39 +56,40 @@ async function create(name, entityName) {
 }
 
 async function createManyToManyData(products) {
-  const developers = {};
-  const publishers = {};
-  const categories = {};
-  const platforms = {};
+  const developers = new Set();
+  const publishers = new Set();
+  const categories = new Set();
+  const platforms = new Set();
 
   products.forEach((product) => {
     const { developer, publisher, genres, supportedOperatingSystems } = product;
 
-    genres &&
-      genres.forEach((item) => {
-        categories[item] = true;
-      });
+    genres?.forEach((item) => {
+      categories.add(item);
+    });
 
-    supportedOperatingSystems &&
-      supportedOperatingSystems.forEach((item) => {
-        platforms[item] = true;
-      });
+    supportedOperatingSystems?.forEach((item) => {
+      platforms.add(item);
+    });
 
-    developers[developer] = true;
-    publishers[publisher] = true;
+    developers.add(developer);
+    publishers.add(publisher);
   });
 
+  const createCall = (set, entityName) =>
+    Array.from(set).map((name) => create(name, entityName));
+
   return Promise.all([
-    ...Object.keys(developers).map((name) => create(name, 'developer')),
-    ...Object.keys(publishers).map((name) => create(name, 'publisher')),
-    ...Object.keys(categories).map((name) => create(name, 'category')),
-    ...Object.keys(platforms).map((name) => create(name, 'platform')),
+    ...createCall(developers, 'developer'),
+    ...createCall(publishers, 'publisher'),
+    ...createCall(categories, 'category'),
+    ...createCall(platforms, 'platform'),
   ]);
 }
 
 async function setImage({ image, game, field = 'cover' }) {
   try {
-    const url = `https:${image}_bg_crop_1680x655.jpg`;
+    const url = `https:${image}.jpg`;
     const { data } = await axios.get(url, { responseType: 'arraybuffer' });
     const buffer = Buffer.from(data, 'base64');
 
